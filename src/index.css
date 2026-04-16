@@ -110,6 +110,15 @@ h2 {
   }
 }
 
+.step-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.col-header {
+  height: 190px;
+}
+
 /* Form Elements */
 .input-area {
   width: 100%;
@@ -134,7 +143,7 @@ h2 {
   height: 240px;
   overflow-y: auto;
   resize: vertical;
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
 }
 
 /* Upload Zone */
@@ -149,7 +158,7 @@ h2 {
   cursor: pointer;
   box-shadow: 6px 6px 0px 0px var(--ink-black);
   transition: all 0.1s;
-  min-height: 240px;
+  height: 240px;
   text-align: center;
 }
 
