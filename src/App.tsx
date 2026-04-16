@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { Download, Copy, CheckCircle, FileText, AlertCircle, FileUp, Loader2, X } from 'lucide-react';
+import { Download, Copy, Check, FileText, AlertCircle, FileUp, Loader2, X } from 'lucide-react';
 import './index.css';
 
 const DEFAULT_PROMPT = `System Role & Objective
@@ -266,125 +266,114 @@ function App() {
 
   return (
     <div className="app-container">
-      <div className="content-wrapper">
-        
-        {/* Header */}
-        <header className="header">
-          <div className="icon-container">
-            <FileText size={32} />
-          </div>
-          <h1>Exam<span>Slicer</span></h1>
-          <p className="subtitle">
-            Automate the perfect master study guide. Upload your exact past PDFs, generate the structure via AI, and automatically slice and merge them. All within your browser.
+      <header className="header">
+        <div className="header-icon">
+          <FileText size={24} />
+        </div>
+        <div>
+          <h1>Exam Slicer</h1>
+          <p className="desc">
+            Automate the perfect master study guide. Upload your exact past PDFs, generate the structure via AI, and automatically slice and merge them locally.
           </p>
-        </header>
+        </div>
+      </header>
 
-        {/* Workflows */}
-        <div className="grid-layout">
+      <div className="section-block split">
+        <div>
+          <span className="step-marker">Step 01</span>
+          <h2>Generate LLM Rules</h2>
+          <p className="desc">
+            Copy this prompt to the AI, attach your PDFs, and generate the JSON structure.
+          </p>
+          <div className="code-block input-area">
+            {DEFAULT_PROMPT}
+          </div>
+          <button onClick={handleCopyPrompt} className="btn">
+            {copied ? <Check size={18} /> : <Copy size={18} />}
+            {copied ? 'Copied' : 'Copy Prompt'}
+          </button>
+        </div>
+
+        <div>
+          <span className="step-marker">Step 02</span>
+          <h2>Upload Local PDFs</h2>
+          <p className="desc">
+            Upload the exact same PDF files you sent to the LLM. Processing happens purely in-browser.
+          </p>
           
-          {/* Step 1 */}
-          <div className="card group">
-            <div className="glow-effect blue-glow"></div>
-            <h2><span className="badge blue-badge">Step 1</span> Generate LLM Rules</h2>
-            <p className="card-desc">
-              Copy this prompt, head to Gemini, ChatGPT, or Claude, attach your exam PDFs, and get your structured mappings back.
-            </p>
-            <div className="code-block">
-              {DEFAULT_PROMPT}
-            </div>
-            <button 
-              onClick={handleCopyPrompt}
-              className="action-btn copy-btn"
-            >
-              {copied ? <CheckCircle size={18} className="text-green" /> : <Copy size={18} />}
-              {copied ? 'Copied to Clipboard!' : 'Copy Prompt'}
-            </button>
-          </div>
-
-          <div className="separator-column">
-            <div className="separator-line"></div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="card group flex-col">
-            <div className="glow-effect purple-glow"></div>
-            <h2><span className="badge purple-badge">Step 2</span> Upload Local PDFs</h2>
-            <p className="card-desc">
-              Upload the exact same PDF files you sent to the LLM. Your files never leave your device.
-            </p>
-            
-            <input 
-              type="file" 
-              multiple 
-              accept=".pdf" 
-              className="hidden" 
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-            />
-            
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="upload-dropzone"
-            >
-              <FileUp size={32} className="upload-icon" />
-              <span className="upload-title">Click or Drag PDFs</span>
-              <span className="upload-subtitle">.pdf files only</span>
-            </div>
-            
-            {Object.keys(pdfs).length > 0 && (
-              <div className="file-list">
-                {Object.keys(pdfs).map(name => (
-                  <div key={name} className="file-item">
-                    <span className="file-name" title={name}>{name}</span>
-                    <button onClick={() => removePdf(name)} className="remove-btn"><X size={14}/></button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Step 3 */}
-        <div className="card group step-3">
-          <div className="glow-effect green-glow bottom-glow"></div>
-          <h2><span className="badge green-badge">Step 3</span> Combine & Generate</h2>
-          <p className="card-desc">
-            Paste the JSON output exactly as generated by the LLM, and click Generate to retrieve your sliced document.
-          </p>
-
-          <textarea 
-            value={jsonInput}
-            onChange={(e) => setJsonInput(e.target.value)}
-            placeholder='{"categories": [...]}'
-            className="json-textarea"
+          <input 
+            type="file" 
+            multiple 
+            accept=".pdf" 
+            className="hidden" 
+            ref={fileInputRef}
+            onChange={handleFileUpload}
           />
-
-          {errorText && (
-            <div className="alert error-alert">
-              <AlertCircle size={18} />
-              <span>{errorText}</span>
-            </div>
-          )}
-
-          {successText && (
-            <div className="alert success-alert">
-              <CheckCircle size={18} />
-              <span>{successText}</span>
-            </div>
-          )}
-
-          <div className="btn-container">
-            <button 
-              onClick={generatePDF}
-              disabled={isGenerating}
-              className={`generate-btn ${isGenerating ? 'disabled-btn' : ''}`}
-            >
-              {isGenerating ? <Loader2 size={22} className="spinner" /> : <Download size={22} />}
-              {isGenerating ? 'Processing PDFs...' : 'Generate Master Study Guide'}
-            </button>
+          
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="upload-zone"
+          >
+            <FileUp size={24} className="upload-icon" />
+            <span className="upload-title">Select PDFs</span>
+            <span className="upload-subtitle">No files are uploaded to any server</span>
           </div>
+          
+          {Object.keys(pdfs).length > 0 && (
+            <div className="file-list">
+              {Object.keys(pdfs).map(name => (
+                <div key={name} className="file-item">
+                  <span className="file-name" title={name}>{name}</span>
+                  <button onClick={() => removePdf(name)} title="Remove">
+                    <X size={14}/>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
 
+      <div className="section-block">
+        <span className="step-marker">Step 03</span>
+        <h2>Combine & Generate</h2>
+        <p className="desc">
+          Paste the JSON output precisely as generated by the AI model.
+        </p>
+
+        <textarea 
+          value={jsonInput}
+          onChange={(e) => setJsonInput(e.target.value)}
+          placeholder='{"categories": [...]}'
+          className="input-area"
+          style={{ height: '160px', resize: 'vertical', marginBottom: '16px' }}
+        />
+
+        {errorText && (
+          <div className="alert alert-error">
+            <AlertCircle size={16} />
+            <span>{errorText}</span>
+          </div>
+        )}
+
+        {successText && (
+          <div className="alert alert-success">
+            <Check size={16} />
+            <span>{successText}</span>
+          </div>
+        )}
+
+        <div>
+          <button 
+            onClick={generatePDF}
+            disabled={isGenerating}
+            className="btn btn-primary"
+            style={{ width: 'auto' }}
+          >
+            {isGenerating ? <Loader2 size={18} className="spinner" /> : <Download size={18} />}
+            {isGenerating ? 'Processing...' : 'Generate Master Study Guide'}
+          </button>
+        </div>
       </div>
     </div>
   );
