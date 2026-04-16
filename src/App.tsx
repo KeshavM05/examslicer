@@ -287,9 +287,6 @@ function App() {
           <p className="desc">
             Copy this prompt to the AI, attach your PDFs, and generate the JSON structure.
           </p>
-          <div className="code-block input-area">
-            {DEFAULT_PROMPT}
-          </div>
           <button onClick={handleCopyPrompt} className="btn btn-full">
             {copied ? <Check size={18} /> : <Copy size={18} />}
             {copied ? 'Copied' : 'Copy Prompt'}
