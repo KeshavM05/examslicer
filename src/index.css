@@ -11,14 +11,14 @@
   --error-red: oklch(0.60 0.25 25);
   --success-green: oklch(0.75 0.15 140);
 
-  /* Spacing */
+  /* Spacing - Compressed to save vertical space */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
-  --space-2xl: 48px;
-  --space-3xl: 80px;
+  --space-2xl: 40px;
+  --space-3xl: 48px;
 
   /* Borders */
   --border-thick: 3px solid var(--ink-black);
@@ -46,12 +46,12 @@ body {
 
 /* Typography */
 h1 {
-  font-size: clamp(3rem, 8vw, 6rem);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 900;
   text-transform: uppercase;
   line-height: 0.9;
   letter-spacing: -0.04em;
-  margin: 0 0 var(--space-xl) 0;
+  margin: 0 0 var(--space-lg) 0;
 }
 
 h2 {
@@ -67,7 +67,7 @@ h2 {
   font-weight: 400;
   color: var(--ink-gray);
   max-width: 60ch;
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
 }
 
 .step-marker {
@@ -105,8 +105,8 @@ h2 {
 @media (min-width: 768px) {
   .section-block.split {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-3xl);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xl);
   }
 }
 
