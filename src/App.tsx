@@ -274,7 +274,9 @@ function App() {
           <div>
             <h1>Exam Slicer</h1>
             <p className="desc">
-              Automate the perfect master study guide. Upload your exact past PDFs, generate the structure via AI, and automatically slice and merge them locally.
+              12 Weeks of Content, 1 Day to Study? Been there! 
+              <br />
+              This the only reason I pass 100% of my exams despite never going to class.
             </p>
           </div>
         </div>
