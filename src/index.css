@@ -152,13 +152,14 @@ h2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2xl);
+  padding: var(--space-md);
   border: var(--border-thick);
   background-color: var(--pure-white);
   cursor: pointer;
   box-shadow: 6px 6px 0px 0px var(--ink-black);
   transition: all 0.1s;
-  flex-grow: 1;
+  height: 160px;
+  margin-bottom: var(--space-md);
   text-align: center;
 }
 
@@ -169,13 +170,13 @@ h2 {
 }
 
 .upload-icon {
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--space-xs);
   color: var(--ink-black);
 }
 
 .upload-title {
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   letter-spacing: -0.02em;
   margin-bottom: var(--space-xs);
 }
@@ -187,13 +188,29 @@ h2 {
 }
 
 /* File List */
-.file-list {
+.file-list-container {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
-  margin-top: var(--space-lg);
+}
+
+.file-list, .file-list-empty {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
   border: var(--border-thick);
   background-color: var(--pure-white);
   box-shadow: 6px 6px 0px 0px var(--ink-black);
+}
+
+.file-list-empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-gray);
+  font-family: 'Chivo Mono', monospace;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 
 .file-item {

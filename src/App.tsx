@@ -322,18 +322,24 @@ function App() {
             <span className="upload-subtitle">No files are uploaded to any server</span>
           </div>
           
-          {Object.keys(pdfs).length > 0 && (
-            <div className="file-list">
-              {Object.keys(pdfs).map(name => (
-                <div key={name} className="file-item">
-                  <span className="file-name" title={name}>{name}</span>
-                  <button onClick={() => removePdf(name)} title="Remove">
-                    <X size={14}/>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="file-list-container">
+            {Object.keys(pdfs).length > 0 ? (
+              <div className="file-list">
+                {Object.keys(pdfs).map(name => (
+                  <div key={name} className="file-item">
+                    <span className="file-name" title={name}>{name}</span>
+                    <button onClick={() => removePdf(name)} title="Remove">
+                      <X size={14}/>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="file-list-empty">
+                <span>No PDFs Selected</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="step-col">
