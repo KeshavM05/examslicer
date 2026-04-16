@@ -267,14 +267,16 @@ function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <div className="header-icon">
-          <FileText size={24} />
-        </div>
-        <div>
-          <h1>Exam Slicer</h1>
-          <p className="desc">
-            Automate the perfect master study guide. Upload your exact past PDFs, generate the structure via AI, and automatically slice and merge them locally.
-          </p>
+        <div className="header-inner">
+          <div className="header-icon">
+            <FileText size={32} />
+          </div>
+          <div>
+            <h1>Exam Slicer</h1>
+            <p className="desc">
+              Automate the perfect master study guide. Upload your exact past PDFs, generate the structure via AI, and automatically slice and merge them locally.
+            </p>
+          </div>
         </div>
       </header>
 
@@ -288,7 +290,7 @@ function App() {
           <div className="code-block input-area">
             {DEFAULT_PROMPT}
           </div>
-          <button onClick={handleCopyPrompt} className="btn">
+          <button onClick={handleCopyPrompt} className="btn btn-full">
             {copied ? <Check size={18} /> : <Copy size={18} />}
             {copied ? 'Copied' : 'Copy Prompt'}
           </button>
@@ -368,7 +370,6 @@ function App() {
             onClick={generatePDF}
             disabled={isGenerating}
             className="btn btn-primary"
-            style={{ width: 'auto' }}
           >
             {isGenerating ? <Loader2 size={18} className="spinner" /> : <Download size={18} />}
             {isGenerating ? 'Processing...' : 'Generate Master Study Guide'}
