@@ -158,7 +158,7 @@ h2 {
   cursor: pointer;
   box-shadow: 6px 6px 0px 0px var(--ink-black);
   transition: all 0.1s;
-  height: 240px;
+  flex-grow: 1;
   text-align: center;
 }
 
