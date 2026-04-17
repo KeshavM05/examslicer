@@ -18,7 +18,7 @@ Output ONLY valid minified JSON. No conversational text. No markdown. No Phase 3
 Data Schema:
 {
   "examMetadata": {
-    "examTitle": "String",
+    "examTitle": "String (e.g., 'ELEC 448 / MREN 348: Introduction to Robotics')",
     "totalUniqueArchetypes": "Number",
     "examPredictabilityScore": "String (0-100%)",
     "estimatedPassThresholdMarks": "String (e.g., '50%')"
@@ -26,7 +26,7 @@ Data Schema:
   "strategicDashboard": {
     "roiMatrix": [
       {
-        "topic": "String",
+        "topic": "String (e.g., 'Differential Kinematics')",
         "avgMarks": "String (e.g., '24%')",
         "yield": "String (e.g., 'Very High')",
         "complexity": "String (Low/Med/High)",
@@ -41,8 +41,8 @@ Data Schema:
     ],
     "professorTwists": [
       {
-        "topic": "String",
-        "twistDescription": "String",
+        "topic": "String (brief topic label, e.g. 'Force Control')",
+        "twistDescription": "String — Write a DETAILED, actionable paragraph (2 sentences minimum). Explain: (1) exactly what the unusual variation is and how it differs from the standard question. Be specific enough that a student who reads this can immediately recognize the twist in an exam and know how to respond.",
         "yearsSeen": ["String"]
       }
     ]
@@ -71,6 +71,7 @@ Extraction & Accuracy Rules
 The Spanning Rule: Create a separate page object for every relevant page a question spans.
 Zero-Inference Mapping: Do not guess page numbers; verify them.
 Minimalist Selection: Extract the most unique or representative versions, prioritizing latest years.
+Plain Text Only: ALL string values in the JSON must use plain ASCII text. Do NOT use LaTeX notation (e.g. no $symbols$, no \\omega, no \\frac, no backslashes). Write all math concepts in plain English (e.g. write "omega_z" not "$\\omega_z$", write "J-transpose" not "$J^T$"). The JSON will be parsed programmatically and LaTeX will cause a fatal crash.
 Analyze the provided documents and generate the JSON now.`;
 
 interface PDFMap {
@@ -312,8 +313,12 @@ function App() {
     setIsGenerating(true);
 
     try {
-      // 1. Parse JSON
-      const config = JSON.parse(jsonInput);
+      // 1. Parse JSON — sanitize LaTeX artifacts the AI may have slipped in
+      const sanitized = jsonInput
+        .replace(/\$([^$]*)\$/g, (_: string, inner: string) => inner.replace(/\\/g, ''))  // strip $...$ LaTeX
+        .replace(/\\[a-zA-Z]+\{[^}]*\}/g, (m: string) => m.replace(/[\\{}]/g, ''))        // strip \cmd{...}
+        .replace(/\\[a-zA-Z]+/g, (m: string) => m.replace('\\', ''));                      // strip bare \cmd
+      const config = JSON.parse(sanitized);
       if (!config.categories) throw new Error("Invalid JSON: Missing 'categories' array.");
 
       // 2. Create Master Document
