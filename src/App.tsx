@@ -21,14 +21,14 @@ Data Schema:
     "examTitle": "String",
     "totalUniqueArchetypes": "Number",
     "examPredictabilityScore": "String (0-100%)",
-    "estimatedPassThresholdMarks": "Number"
+    "estimatedPassThresholdMarks": "String (e.g., '50%')"
   },
   "strategicDashboard": {
     "roiMatrix": [
       {
         "topic": "String",
-        "avgMarks": "Number",
-        "yield": "String (e.g., 'Very High - guaranteed 10 marks for 2h study')",
+        "avgMarks": "String (e.g., '24%')",
+        "yield": "String (e.g., 'Very High')",
         "complexity": "String (Low/Med/High)",
         "frequencyPercent": "String (e.g., '100%')"
       }
@@ -125,7 +125,7 @@ function App() {
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
     const page = pdfDoc.addPage([612, 792]);
-    const { height } = page.getSize();
+    const { width, height } = page.getSize();
     
     // Draw Category Title (large, centered)
     page.drawText(category.categoryName || "", {
@@ -259,15 +259,38 @@ function App() {
     // 4. Professor Twists
     if (config.strategicDashboard?.professorTwists && currentY > 100) {
       page.drawText("Professor Twists Log", { x: 50, y: currentY, size: 16, font: fontBold, color: rgb(0, 0, 0) });
-      currentY -= 20;
-      for (const twist of config.strategicDashboard.professorTwists) {
-        let desc = twist.twistDescription || "";
-        if (desc.length > 80) desc = desc.substring(0, 77) + "...";
+      currentY -= 22;
 
-        page.drawText(`[${(twist.yearsSeen || []).join(',')}] ${twist.topic}`, { x: 50, y: currentY, size: 10, font: fontBold });
+      // Word-wrap helper: break a string into lines of maxChars
+      const wrapText = (text: string, maxChars: number): string[] => {
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let current = '';
+        for (const word of words) {
+          if ((current + ' ' + word).trim().length > maxChars) {
+            if (current) lines.push(current.trim());
+            current = word;
+          } else {
+            current = (current + ' ' + word).trim();
+          }
+        }
+        if (current) lines.push(current.trim());
+        return lines;
+      };
+
+      for (const twist of config.strategicDashboard.professorTwists) {
+        if (currentY < 60) break;
+        const header = `[${(twist.yearsSeen || []).join(', ')}]  ${twist.topic}`;
+        page.drawText(header, { x: 50, y: currentY, size: 10, font: fontBold });
         currentY -= 15;
-        page.drawText(`- ${desc}`, { x: 60, y: currentY, size: 10, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
-        currentY -= 20;
+
+        const descLines = wrapText(twist.twistDescription || '', 105);
+        for (const line of descLines) {
+          if (currentY < 60) break;
+          page.drawText(`  ${line}`, { x: 60, y: currentY, size: 9, font: fontRegular, color: rgb(0.25, 0.25, 0.25) });
+          currentY -= 13;
+        }
+        currentY -= 8;
       }
     }
   };
@@ -308,6 +331,8 @@ function App() {
 
       // 3. Process each category
       for (const category of config.categories) {
+        const catName = category.categoryName || "Uncategorized";
+        const subtitle = category.subtitle || "";
         const pagesToExtract = category.pagesToExtract || [];
 
         // Create the title page
