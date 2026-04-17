@@ -3,6 +3,8 @@
 > **12 weeks of content. 1 day to study.**  
 > The only reason I pass 100% of my exams despite never going to class.
 
+**[Try it live → examslicer.keshavhq.com](https://examslicer.keshavhq.com/)**
+
 Exam Slicer is a **fully client-side, privacy-first** study tool that turns a pile of past exam PDFs into a perfectly organized Master Study Guide — automatically. No server. No uploads. No subscription. Everything runs in your browser.
 
 ---
