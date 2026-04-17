@@ -6,71 +6,78 @@ import './index.css';
 const DEFAULT_PROMPT = `System Role & Objective
 You are a Senior Academic Strategist and Data Extraction Engine. Your mission is to perform a longitudinal analysis on a provided set of engineering exam documents to build a "Predictive Success Framework." You must identify the underlying "Problem Archetypes" (the logic/DNA of the questions) and calculate the "Yield" (points vs. learning effort) for every recurring topic.
 
-Your goal is not to make decisions for the user, but to equip them with an Objective Data Dashboard that allows them to see exactly where marks are hidden and how to spend their limited time to reach their target (typically 50%).
+Your goal is to equip the user with an Objective Data Dashboard that allows them to see exactly where marks are hidden and how to spend their limited time to reach their target. This data will be used to generate an automated PDF cover page.
 
 Phase 1: Deep Data Analysis (Internal Process)
 Before generating any output, you must internally perform a multi-dimensional analysis:
 
-Archetype Identification: Group questions that share the same underlying mathematical or logical "recipe." Treat variations in physical setups (e.g., different robot geometries) as unique sub-types of the same archetype.
-
-Frequency & Mark Weighting: Analyze the past 5-10 years to determine how many marks each archetype contributes to the total exam on average.
-
-Redundancy Filtering: Prioritize the most recent 3 years for specific data mapping, as these best reflect current instructor trends.
-
-Multi-Page Verification: Actively check the bottom of every page. If a question, diagram, or part of a sub-problem continues onto the next page, you must flag both pages for extraction.
+Archetype Identification: Group questions that share the same underlying mathematical or logical "recipe." Treat variations in physical setups as unique sub-types of the same archetype.
+Frequency & Mark Weighting: Analyze the provided years to determine how many marks each archetype contributes to the total exam on average.
+Redundancy Filtering: Prioritize the most recent 3 years for specific data mapping.
+The Spanning Check: Actively verify if a question, diagram, or sub-problem continues onto the next page. If it does, you MUST include both pages in the JSON.
 
 Phase 2: Technical Data Extraction (JSON Output)
-You must output ONLY valid, minified JSON first. No conversational text, no markdown code blocks.
-Data Schema:
+You must output ONLY valid, minified JSON first. No conversational text, no markdown code blocks. This JSON must include a strategicDashboard object containing the data for the PDF cover page.
 
-JSON
+Data Schema:
 {
   "examMetadata": {
+    "examTitle": "String",
     "totalUniqueArchetypes": "Number",
-    "examPredictabilityScore": "String (0-100% based on consistency)",
+    "examPredictabilityScore": "String (0-100%)",
     "estimatedPassThresholdMarks": "Number"
+  },
+  "strategicDashboard": {
+    "roiMatrix": [
+      {
+        "topic": "String",
+        "avgMarks": "Number",
+        "complexity": "String (Low/Med/High)",
+        "frequencyPercent": "String (e.g., '100%')"
+      }
+    ],
+    "frequencyHeatmap": [
+      {
+        "topic": "String",
+        "yearsPresent": ["String"]
+      }
+    ],
+    "professorTwists": [
+      {
+        "topic": "String",
+        "twistDescription": "String (Description of the niche variation)",
+        "yearsSeen": ["String"]
+      }
+    ]
   },
   "categories": [
     {
-      "categoryName": "String (e.g., '1. Topic Title')",
-      "statisticalYield": "String (Average marks per exam + % of total paper)",
-      "subtitle": "String (List of questions included, e.g., '2025 Q1, 2022 Q3')",
+      "categoryName": "String",
+      "statisticalYield": "String",
+      "subtitle": "String (List of questions included)",
       "pagesToExtract": [
         {
-          "fileName": "String (Exact PDF name)",
-          "pageNumber": "Number (Integer)",
-          "stampText": "String (Label, e.g., '2025 - Q1 [Topic Name]')"
+          "fileName": "String",
+          "pageNumber": "Number",
+          "stampText": "String (Label, e.g., '2025 - Q1 [Topic]')"
         }
       ]
     }
   ],
-  "uncategorized": [
-     {
-       "fileName": "String",
-       "pageNumber": "Number",
-       "stampText": "String"
-     }
-  ]
+  "uncategorized": []
 }
+
 Phase 3: The Strategic Game Plan (Human-Readable Dashboard)
-After the JSON, provide an exhaustive, objective "Master Plan" for the user. Do not make recommendations; provide the data they need to make their own choices.
+After the JSON, provide an exhaustive, objective "Master Plan." Do not make recommendations; provide the data for the user to make their own choices.
 
-1. The Yield & ROI Matrix (Table)
-Provide a table with the following columns: Topic | Average Marks | Learning Complexity (Low/Med/High) | Frequency (%).
-
-2. The Frequency Heatmap
-A list or table showing which years each topic appeared. This allows the user to see if a topic is "trending" or "rotational."
-
-3. Analysis of Professor "Twists"
-Identify any "niche" or "edge case" questions that only appear once every few years. Label these so the user can decide if they are worth the effort.
+The Yield & ROI Table: A clear table showing Topic | Average Marks | Learning Complexity | Frequency (%).
+The Frequency Heatmap: A visual list or table showing exactly which years each topic appeared to identify "rotational" or "guaranteed" topics.
+The "Professor Twists" Log: Identify "niche" or "edge case" questions that only appear once every few years. Label these clearly so the user knows they are low-probability but high-difficulty.
 
 Extraction & Accuracy Rules
-The Spanning Rule: If a question or its required diagrams span multiple pages, you MUST duplicate that page object into the JSON for every relevant page.
-
+The Spanning Rule: If a question or its required diagrams/charts span multiple pages, you MUST create a separate page object for every relevant page.
 Zero-Inference Mapping: Treat the data as immutable facts. Do not "guess" a page number; verify it.
-
-Minimalist Selection: Even if a topic is frequent, only extract the most unique or most representative versions of that question.
-
+Minimalist Selection: Even if a topic is frequent, only extract the most unique or most representative versions (prioritizing the latest years).
 Analyze the provided documents and generate the Complete Strategic Analysis now.`;
 
 interface PDFMap {
@@ -172,6 +179,95 @@ function App() {
     }
   };
 
+  const createMasterCoverPage = async (pdfDoc: PDFDocument, config: any) => {
+    if (!config.examMetadata && !config.strategicDashboard) return;
+
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    
+    const page = pdfDoc.addPage([612, 792]);
+    const { height } = page.getSize();
+    
+    let currentY = height - 60;
+
+    // 1. Exam Title & Metrics
+    if (config.examMetadata) {
+      page.drawText(config.examMetadata.examTitle || "Strategic Master Study Guide", {
+        x: 50, y: currentY, size: 20, font: fontBold, color: rgb(0, 0, 0)
+      });
+      currentY -= 30;
+
+      const metrics = [
+        `Predictability: ${config.examMetadata.examPredictabilityScore || 'N/A'}`,
+        `Pass Threshold: ${config.examMetadata.estimatedPassThresholdMarks || 'N/A'} marks`,
+        `Unique Archetypes: ${config.examMetadata.totalUniqueArchetypes || 'N/A'}`
+      ];
+      
+      page.drawText(metrics.join('  |  '), {
+        x: 50, y: currentY, size: 10, font: fontBold, color: rgb(0.2, 0.2, 0.2)
+      });
+      currentY -= 40;
+    }
+
+    // 2. Yield & ROI Matrix Table
+    if (config.strategicDashboard?.roiMatrix) {
+      page.drawText("Yield & ROI Matrix", { x: 50, y: currentY, size: 16, font: fontBold, color: rgb(0, 0, 0) });
+      currentY -= 20;
+
+      // Table Header
+      page.drawText("Topic", { x: 50, y: currentY, size: 10, font: fontBold });
+      page.drawText("Avg Marks", { x: 350, y: currentY, size: 10, font: fontBold });
+      page.drawText("Complexity", { x: 430, y: currentY, size: 10, font: fontBold });
+      page.drawText("Freq %", { x: 510, y: currentY, size: 10, font: fontBold });
+      
+      currentY -= 10;
+      page.drawLine({ start: { x: 50, y: currentY }, end: { x: 560, y: currentY }, thickness: 2, color: rgb(0,0,0) });
+      currentY -= 15;
+
+      for (const row of config.strategicDashboard.roiMatrix) {
+        let topic = row.topic || "";
+        if (topic.length > 55) topic = topic.substring(0, 52) + "...";
+
+        page.drawText(topic, { x: 50, y: currentY, size: 10, font: fontRegular });
+        page.drawText(String(row.avgMarks || ""), { x: 350, y: currentY, size: 10, font: fontRegular });
+        page.drawText(row.complexity || "", { x: 430, y: currentY, size: 10, font: fontRegular });
+        page.drawText(row.frequencyPercent || "", { x: 510, y: currentY, size: 10, font: fontRegular });
+        currentY -= 20;
+      }
+      currentY -= 20;
+    }
+
+    // 3. Frequency Heatmap
+    if (config.strategicDashboard?.frequencyHeatmap && currentY > 150) {
+      page.drawText("Frequency Heatmap", { x: 50, y: currentY, size: 16, font: fontBold, color: rgb(0, 0, 0) });
+      currentY -= 20;
+      for (const item of config.strategicDashboard.frequencyHeatmap) {
+        let topic = item.topic || "";
+        if (topic.length > 40) topic = topic.substring(0, 37) + "...";
+        const years = (item.yearsPresent || []).join(', ');
+        page.drawText(`${topic}:`, { x: 50, y: currentY, size: 10, font: fontBold });
+        page.drawText(years, { x: 280, y: currentY, size: 10, font: fontRegular });
+        currentY -= 15;
+      }
+      currentY -= 20;
+    }
+
+    // 4. Professor Twists
+    if (config.strategicDashboard?.professorTwists && currentY > 100) {
+      page.drawText("Professor Twists Log", { x: 50, y: currentY, size: 16, font: fontBold, color: rgb(0, 0, 0) });
+      currentY -= 20;
+      for (const twist of config.strategicDashboard.professorTwists) {
+        let desc = twist.twistDescription || "";
+        if (desc.length > 80) desc = desc.substring(0, 77) + "...";
+
+        page.drawText(`[${(twist.yearsSeen || []).join(',')}] ${twist.topic}`, { x: 50, y: currentY, size: 10, font: fontBold });
+        currentY -= 15;
+        page.drawText(`- ${desc}`, { x: 60, y: currentY, size: 10, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+        currentY -= 20;
+      }
+    }
+  };
+
   const generatePDF = async () => {
     setErrorText('');
     setSuccessText('');
@@ -202,6 +298,9 @@ function App() {
       }
 
       const fontBold = await masterPdf.embedFont(StandardFonts.HelveticaBold);
+
+      // Create the Master Dashboard Cover Page if data is available
+      await createMasterCoverPage(masterPdf, config);
 
       // 3. Process each category
       for (const category of config.categories) {
