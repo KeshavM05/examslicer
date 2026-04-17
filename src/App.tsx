@@ -4,20 +4,16 @@ import { Download, Copy, Check, FileText, AlertCircle, FileUp, Loader2, X } from
 import './index.css';
 
 const DEFAULT_PROMPT = `System Role & Objective
-You are a Senior Academic Strategist and Data Extraction Engine. Your mission is to perform a longitudinal analysis on a provided set of engineering exam documents to build a "Predictive Success Framework." You must identify the underlying "Problem Archetypes" (the logic/DNA of the questions) and calculate the "Yield" (points vs. learning effort) for every recurring topic.
-
-Your goal is to equip the user with an Objective Data Dashboard that allows them to see exactly where marks are hidden and how to spend their limited time to reach their target. This data will be used to generate an automated PDF cover page.
+You are a Senior Academic Strategist and Data Extraction Engine. Your mission is to perform a longitudinal analysis on a provided set of engineering exam documents to build a "Predictive Success Framework."
 
 Phase 1: Deep Data Analysis (Internal Process)
-Before generating any output, you must internally perform a multi-dimensional analysis:
+Archetype Identification: Group questions sharing the same logical recipe. Treat physical setup variations as sub-types.
+Frequency & Mark Weighting: Calculate average marks per archetype across all provided years.
+Redundancy Filtering: Prioritize most recent 3 years for page extraction.
+The Spanning Check: If a question spans pages, MUST include all pages in JSON.
 
-Archetype Identification: Group questions that share the same underlying mathematical or logical "recipe." Treat variations in physical setups as unique sub-types of the same archetype.
-Frequency & Mark Weighting: Analyze the provided years to determine how many marks each archetype contributes to the total exam on average.
-Redundancy Filtering: Prioritize the most recent 3 years for specific data mapping.
-The Spanning Check: Actively verify if a question, diagram, or sub-problem continues onto the next page. If it does, you MUST include both pages in the JSON.
-
-Phase 2: Technical Data Extraction (JSON Output)
-You must output ONLY valid, minified JSON first. No conversational text, no markdown code blocks. This JSON must include a strategicDashboard object containing the data for the PDF cover page.
+Phase 2: Output Rules
+Output ONLY valid minified JSON. No conversational text. No markdown. No Phase 3 tables. All analytical data must be embedded in the JSON for automated PDF rendering.
 
 Data Schema:
 {
@@ -32,6 +28,7 @@ Data Schema:
       {
         "topic": "String",
         "avgMarks": "Number",
+        "yield": "String (e.g., 'Very High - guaranteed 10 marks for 2h study')",
         "complexity": "String (Low/Med/High)",
         "frequencyPercent": "String (e.g., '100%')"
       }
@@ -45,7 +42,7 @@ Data Schema:
     "professorTwists": [
       {
         "topic": "String",
-        "twistDescription": "String (Description of the niche variation)",
+        "twistDescription": "String",
         "yearsSeen": ["String"]
       }
     ]
@@ -54,12 +51,15 @@ Data Schema:
     {
       "categoryName": "String",
       "statisticalYield": "String",
-      "subtitle": "String (List of questions included)",
+      "subtitle": "String (comma-separated topic list)",
+      "questionsIncluded": ["String (e.g., '2025 Q1', '2022 Q1')"],
       "pagesToExtract": [
         {
           "fileName": "String",
           "pageNumber": "Number",
-          "stampText": "String (Label, e.g., '2025 - Q1 [Topic]')"
+          "year": "String (e.g., '2025')",
+          "questionLabel": "String (e.g., 'Q1')",
+          "topicTag": "String (e.g., '[Spherical 2RP Kinematics]')"
         }
       ]
     }
@@ -67,18 +67,11 @@ Data Schema:
   "uncategorized": []
 }
 
-Phase 3: The Strategic Game Plan (Human-Readable Dashboard)
-After the JSON, provide an exhaustive, objective "Master Plan." Do not make recommendations; provide the data for the user to make their own choices.
-
-The Yield & ROI Table: A clear table showing Topic | Average Marks | Learning Complexity | Frequency (%).
-The Frequency Heatmap: A visual list or table showing exactly which years each topic appeared to identify "rotational" or "guaranteed" topics.
-The "Professor Twists" Log: Identify "niche" or "edge case" questions that only appear once every few years. Label these clearly so the user knows they are low-probability but high-difficulty.
-
 Extraction & Accuracy Rules
-The Spanning Rule: If a question or its required diagrams/charts span multiple pages, you MUST create a separate page object for every relevant page.
-Zero-Inference Mapping: Treat the data as immutable facts. Do not "guess" a page number; verify it.
-Minimalist Selection: Even if a topic is frequent, only extract the most unique or most representative versions (prioritizing the latest years).
-Analyze the provided documents and generate the Complete Strategic Analysis now.`;
+The Spanning Rule: Create a separate page object for every relevant page a question spans.
+Zero-Inference Mapping: Do not guess page numbers; verify them.
+Minimalist Selection: Extract the most unique or representative versions, prioritizing latest years.
+Analyze the provided documents and generate the JSON now.`;
 
 interface PDFMap {
   [filename: string]: ArrayBuffer;
@@ -127,55 +120,62 @@ function App() {
     setPdfs(newPdfs);
   };
 
-  const createTitlePage = async (pdfDoc: PDFDocument, titleText: string, subtitleText: string) => {
+  const createTitlePage = async (pdfDoc: PDFDocument, category: any) => {
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
-    // Add a blank page
-    const page = pdfDoc.addPage([612, 792]); // Standard 8.5x11 inches
-    const { width, height } = page.getSize();
+    const page = pdfDoc.addPage([612, 792]);
+    const { height } = page.getSize();
     
-    // Draw Category Title
-    page.drawText(titleText, {
+    // Draw Category Title (large, centered)
+    page.drawText(category.categoryName || "", {
       x: 50,
-      y: height / 2 + 100,
-      size: 24,
+      y: height / 2 + 120,
+      size: 22,
       font: font,
       color: rgb(0, 0, 0),
     });
-    
-    // Draw Top Right Category Name
-    const topRightTextWidth = fontRegular.widthOfTextAtSize(titleText, 12);
-    page.drawText(titleText, {
-      x: width - topRightTextWidth - 30,
-      y: height - 40,
-      size: 12,
+
+    // Draw Statistical Yield below title
+    const yieldText = `Statistical Yield: ${category.statisticalYield || 'N/A'}`;
+    page.drawText(yieldText, {
+      x: 50,
+      y: height / 2 + 90,
+      size: 11,
       font: fontRegular,
-      color: rgb(0, 0, 0),
+      color: rgb(0.3, 0.3, 0.3),
     });
 
-    // Draw subtitle "Includes:"
-    page.drawText("Includes:", {
-      x: 100,
-      y: height / 2 + 50,
-      size: 18,
+    // Draw "Questions Included in This Section"
+    page.drawText("Questions Included:", {
+      x: 50,
+      y: height / 2 + 55,
+      size: 14,
       font: font,
       color: rgb(0, 0, 0)
     });
 
-    // Draw bullets
-    const bullets = subtitleText.split(',').map(b => b.trim());
-    let currentY = height / 2 + 20;
-    
+    const questions: string[] = category.questionsIncluded || [];
+    let qY = height / 2 + 30;
+    for (const q of questions) {
+      page.drawText(`- ${q}`, { x: 65, y: qY, size: 12, font: fontRegular, color: rgb(0, 0, 0) });
+      qY -= 18;
+    }
+
+    // Draw "Topics Covered"
+    page.drawText("Topics Covered:", {
+      x: 50,
+      y: qY - 10,
+      size: 14,
+      font: font,
+      color: rgb(0, 0, 0)
+    });
+
+    const bullets = (category.subtitle || "").split(',').map((b: string) => b.trim());
+    let currentY = qY - 30;
     for (const bullet of bullets) {
-      page.drawText(`• ${bullet}`, {
-        x: 120,
-        y: currentY,
-        size: 14,
-        font: fontRegular,
-        color: rgb(0, 0, 0)
-      });
-      currentY -= 25;
+      page.drawText(`- ${bullet}`, { x: 65, y: currentY, size: 12, font: fontRegular, color: rgb(0, 0, 0) });
+      currentY -= 18;
     }
   };
 
@@ -209,16 +209,17 @@ function App() {
       currentY -= 40;
     }
 
-    // 2. Yield & ROI Matrix Table
+      // 2. Yield & ROI Matrix Table
     if (config.strategicDashboard?.roiMatrix) {
       page.drawText("Yield & ROI Matrix", { x: 50, y: currentY, size: 16, font: fontBold, color: rgb(0, 0, 0) });
       currentY -= 20;
 
       // Table Header
       page.drawText("Topic", { x: 50, y: currentY, size: 10, font: fontBold });
-      page.drawText("Avg Marks", { x: 350, y: currentY, size: 10, font: fontBold });
-      page.drawText("Complexity", { x: 430, y: currentY, size: 10, font: fontBold });
-      page.drawText("Freq %", { x: 510, y: currentY, size: 10, font: fontBold });
+      page.drawText("Avg Marks", { x: 280, y: currentY, size: 10, font: fontBold });
+      page.drawText("Complexity", { x: 350, y: currentY, size: 10, font: fontBold });
+      page.drawText("Freq %", { x: 430, y: currentY, size: 10, font: fontBold });
+      page.drawText("Yield (ROI)", { x: 480, y: currentY, size: 10, font: fontBold });
       
       currentY -= 10;
       page.drawLine({ start: { x: 50, y: currentY }, end: { x: 560, y: currentY }, thickness: 2, color: rgb(0,0,0) });
@@ -226,15 +227,18 @@ function App() {
 
       for (const row of config.strategicDashboard.roiMatrix) {
         let topic = row.topic || "";
-        if (topic.length > 55) topic = topic.substring(0, 52) + "...";
+        if (topic.length > 40) topic = topic.substring(0, 37) + "...";
+        let yieldVal = row.yield || "";
+        if (yieldVal.length > 15) yieldVal = yieldVal.substring(0, 13) + "...";
 
-        page.drawText(topic, { x: 50, y: currentY, size: 10, font: fontRegular });
-        page.drawText(String(row.avgMarks || ""), { x: 350, y: currentY, size: 10, font: fontRegular });
-        page.drawText(row.complexity || "", { x: 430, y: currentY, size: 10, font: fontRegular });
-        page.drawText(row.frequencyPercent || "", { x: 510, y: currentY, size: 10, font: fontRegular });
-        currentY -= 20;
+        page.drawText(topic, { x: 50, y: currentY, size: 9, font: fontRegular });
+        page.drawText(String(row.avgMarks || ""), { x: 280, y: currentY, size: 9, font: fontRegular });
+        page.drawText(row.complexity || "", { x: 350, y: currentY, size: 9, font: fontRegular });
+        page.drawText(row.frequencyPercent || "", { x: 430, y: currentY, size: 9, font: fontRegular });
+        page.drawText(yieldVal, { x: 480, y: currentY, size: 9, font: fontRegular });
+        currentY -= 18;
       }
-      currentY -= 20;
+      currentY -= 15;
     }
 
     // 3. Frequency Heatmap
@@ -304,17 +308,20 @@ function App() {
 
       // 3. Process each category
       for (const category of config.categories) {
-        const catName = category.categoryName || "Uncategorized";
-        const subtitle = category.subtitle || "";
         const pagesToExtract = category.pagesToExtract || [];
 
         // Create the title page
-        await createTitlePage(masterPdf, catName, subtitle);
+        await createTitlePage(masterPdf, category);
 
         for (const pageData of pagesToExtract) {
           const filename = pageData.fileName;
-          const pIndex = (pageData.pageNumber || 1) - 1; // 0-indexed
-          const stampText = pageData.stampText || "";
+          const pIndex = (pageData.pageNumber || 1) - 1;
+          // Support both old stampText and new split fields
+          const year = pageData.year || "";
+          const questionLabel = pageData.questionLabel || "";
+          const topicTag = pageData.topicTag || "";
+          // Fallback: parse stampText if new fields absent
+          const stampText = pageData.stampText || `${year} - ${questionLabel} ${topicTag}`.trim();
 
           const sourcePdf = loadedSourcePdfs[filename];
           if (!sourcePdf) {
@@ -331,13 +338,28 @@ function App() {
           masterPdf.addPage(copiedPage);
 
           const { width, height } = copiedPage.getSize();
-          copiedPage.drawText(stampText, {
-            x: width - fontBold.widthOfTextAtSize(stampText, 18) - 30, // Align rightish
-            y: height - 50,
-            size: 18,
+
+          // Top-right: year + question label (e.g. "2022 - Q1")
+          const rightLabel = (year && questionLabel) ? `${year} - ${questionLabel}` : stampText.split('[')[0].trim();
+          copiedPage.drawText(rightLabel, {
+            x: width - fontBold.widthOfTextAtSize(rightLabel, 14) - 30,
+            y: height - 42,
+            size: 14,
             font: fontBold,
-            color: rgb(1, 0, 0), // Red text
+            color: rgb(1, 0, 0),
           });
+
+          // Top-left: topic tag (e.g. "[Spherical 2RP Kinematics]")
+          const leftLabel = topicTag || (stampText.includes('[') ? '[' + stampText.split('[').slice(1).join('[') : '');
+          if (leftLabel) {
+            copiedPage.drawText(leftLabel, {
+              x: 30,
+              y: height - 42,
+              size: 14,
+              font: fontBold,
+              color: rgb(1, 0, 0),
+            });
+          }
         }
       }
 
