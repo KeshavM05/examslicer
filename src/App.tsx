@@ -395,10 +395,18 @@ function App() {
       const pdfBytes = await masterPdf.save();
       const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
-      
+
+      // Build a safe filename from the exam title
+      const rawTitle = config.examMetadata?.examTitle || 'Master_Study_Guide';
+      const safeTitle = rawTitle
+        .replace(/[/\\:*?"<>|]/g, '')   // strip OS-illegal chars
+        .replace(/\s+/g, '_')            // spaces to underscores
+        .replace(/_+/g, '_')             // collapse multiple underscores
+        .substring(0, 120);              // cap length
+
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'Master_Study_Guide.pdf';
+      link.download = `${safeTitle}_Study_Guide.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
