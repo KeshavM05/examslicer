@@ -126,7 +126,7 @@ function App() {
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
     const page = pdfDoc.addPage([612, 792]);
-    const { width, height } = page.getSize();
+    const { height } = page.getSize();
     
     // Draw Category Title (large, centered)
     page.drawText(category.categoryName || "", {
@@ -336,8 +336,6 @@ function App() {
 
       // 3. Process each category
       for (const category of config.categories) {
-        const catName = category.categoryName || "Uncategorized";
-        const subtitle = category.subtitle || "";
         const pagesToExtract = category.pagesToExtract || [];
 
         // Create the title page
