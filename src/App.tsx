@@ -324,6 +324,7 @@ function App() {
       // 2. Create Master Document
       const masterPdf = await PDFDocument.create();
       const loadedSourcePdfs: { [filename: string]: PDFDocument } = {};
+      const missingFiles = new Set<string>();
 
       for (const [filename, buffer] of Object.entries(pdfs)) {
         loadedSourcePdfs[filename] = await PDFDocument.load(buffer);
@@ -351,9 +352,15 @@ function App() {
           // Fallback: parse stampText if new fields absent
           const stampText = pageData.stampText || `${year} - ${questionLabel} ${topicTag}`.trim();
 
-          const sourcePdf = loadedSourcePdfs[filename];
+          // Case-insensitive fuzzy file match
+          const filenameLower = filename.toLowerCase();
+          const matchedKey = Object.keys(loadedSourcePdfs).find(k =>
+            k.toLowerCase() === filenameLower ||
+            k.toLowerCase().replace(/[_\-\s]/g, '') === filenameLower.replace(/[_\-\s]/g, '')
+          );
+          const sourcePdf = matchedKey ? loadedSourcePdfs[matchedKey] : undefined;
           if (!sourcePdf) {
-            console.warn(`File ${filename} not found in uploads.`);
+            missingFiles.add(filename);
             continue;
           }
 
@@ -411,7 +418,11 @@ function App() {
       link.click();
       document.body.removeChild(link);
 
-      setSuccessText('PDF Generated successfully!');
+      setSuccessText(
+        missingFiles.size > 0
+          ? `PDF downloaded, but ${missingFiles.size} file(s) were not found and their pages were skipped: ${[...missingFiles].join(', ')}`
+          : 'PDF Generated successfully!'
+      );
 
     } catch (err: any) {
       console.error(err);
