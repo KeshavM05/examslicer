@@ -96,6 +96,16 @@ h2 {
   border-bottom: var(--border-thick);
 }
 
+.header-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.header-icon {
+  flex-shrink: 0;
+}
+
 /* Sections */
 .section-block {
   margin-bottom: var(--space-3xl);
@@ -330,6 +340,61 @@ h2 {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .app-container {
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .header {
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-lg);
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+
+  .desc {
+    font-size: 1rem;
+  }
+
+  .col-header {
+    height: auto;
+    margin-bottom: var(--space-md);
+  }
+
+  .step-col {
+    margin-bottom: var(--space-xl);
+  }
+
+  .input-area,
+  .upload-zone,
+  .file-list,
+  .file-list-empty,
+  .btn,
+  .alert {
+    box-shadow: 4px 4px 0px 0px var(--ink-black);
+  }
+
+  .upload-zone {
+    height: 120px;
+  }
+
+  .btn {
+    padding: var(--space-md) var(--space-lg);
+    font-size: 0.875rem;
+  }
+
+  .file-name {
+    max-width: calc(100vw - 120px);
+  }
+
+  .alert {
+    font-size: 0.875rem;
+  }
 }
 
 /* Scrollbars */
